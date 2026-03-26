@@ -13,13 +13,16 @@ export class FieldMapper {
       return;
     }
 
-    const url = `${config.apiDomain}/api/v2/dealFields?limit=500`;
+    // Try v1 endpoint — v2 may require additional scopes
+    const url = `${config.apiDomain}/api/v1/dealFields?limit=500`;
     const res = await fetch(url, {
       headers: { Authorization: `Bearer ${config.accessToken}` },
     });
 
     if (!res.ok) {
-      throw new Error(`Failed to load deal fields: ${res.status}`);
+      console.warn(`Failed to load deal fields: ${res.status}. Custom field translation disabled.`);
+      this.loadedAt = Date.now(); // Prevent retrying on every request
+      return;
     }
 
     const json = (await res.json()) as { data: DealField[] };
