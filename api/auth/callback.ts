@@ -28,7 +28,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const userRes = await fetch(`${tokens.apiDomain}/api/v1/users/me`, {
       headers: { Authorization: `Bearer ${tokens.accessToken}` },
     });
-    const userData = await userRes.json();
+    const userData = (await userRes.json()) as { data: { id: number } };
     const userId = String(userData.data.id);
 
     const tokenStore = new TokenStore(encryptionKey);

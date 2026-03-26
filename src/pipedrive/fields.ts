@@ -22,7 +22,7 @@ export class FieldMapper {
       throw new Error(`Failed to load deal fields: ${res.status}`);
     }
 
-    const json = await res.json();
+    const json = (await res.json()) as { data: DealField[] };
     const fields: DealField[] = json.data;
 
     const newKeyToName = new Map<string, string>();

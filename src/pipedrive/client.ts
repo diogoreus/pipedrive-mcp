@@ -120,7 +120,7 @@ export class PipedriveClient {
     // Map to PipedriveError
     let message: string;
     try {
-      const json = await res.json();
+      const json = (await res.json()) as { error?: string; message?: string };
       message = json.error ?? json.message ?? `HTTP ${res.status}`;
     } catch {
       message = await res.text().catch(() => `HTTP ${res.status}`);

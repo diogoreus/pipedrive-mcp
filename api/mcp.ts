@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { NodeStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
+import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { createServer } from "../src/server.js";
 import { PipedriveClient } from "../src/pipedrive/client.js";
 import { FieldMapper } from "../src/pipedrive/fields.js";
@@ -70,7 +70,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     getFieldMapper: () => fieldMapper,
   });
 
-  const transport = new NodeStreamableHTTPServerTransport({
+  const transport = new StreamableHTTPServerTransport({
     sessionIdGenerator: undefined, // Stateless mode
   });
 

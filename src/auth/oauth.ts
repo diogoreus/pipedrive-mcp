@@ -44,7 +44,12 @@ export async function exchangeCodeForTokens(params: {
     throw new Error(`OAuth token exchange failed (${res.status}): ${text}`);
   }
 
-  const data = await res.json();
+  const data = (await res.json()) as {
+    access_token: string;
+    refresh_token: string;
+    expires_in: number;
+    api_domain: string;
+  };
   return {
     accessToken: data.access_token,
     refreshToken: data.refresh_token,
@@ -77,7 +82,12 @@ export async function refreshAccessToken(params: {
     throw new Error(`OAuth token refresh failed (${res.status}): ${text}`);
   }
 
-  const data = await res.json();
+  const data = (await res.json()) as {
+    access_token: string;
+    refresh_token: string;
+    expires_in: number;
+    api_domain: string;
+  };
   return {
     accessToken: data.access_token,
     refreshToken: data.refresh_token,
