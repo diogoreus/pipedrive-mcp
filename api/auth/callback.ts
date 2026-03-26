@@ -25,11 +25,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       redirectUri,
     });
 
+    // Fetch user info to get user ID and correct company domain
     const userRes = await fetch(`${tokens.apiDomain}/api/v1/users/me`, {
       headers: { Authorization: `Bearer ${tokens.accessToken}` },
     });
-    const userData = (await userRes.json()) as { data: { id: number } };
+    const userData = (await userRes.json()) as {
+      data: { id: number; company_domain: string };
+    };
     const userId = String(userData.data.id);
+
+    // Pipedrive OAuth returns api_domain like "https://api.pipedrive.com"
+    // but API calls must go to the company-specific subdomain
+    const companyDomain = userData.data.company_domain;
+    if (companyDomain) {
+      tokens.apiDomain = `https://${companyDomain}.pipedrive.com`;
+    }
 
     const tokenStore = new TokenStore(encryptionKey);
     await tokenStore.store(userId, tokens);
