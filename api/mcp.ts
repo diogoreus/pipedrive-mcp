@@ -73,15 +73,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
   }
 
+  // Pipedrive api_domain may be "https://company-api.pipedrive.com" or similar.
+  // Normalize to the company subdomain format that the API expects.
+  const apiDomain = normalizeApiDomain(tokens.apiDomain);
+  console.log(`Using apiDomain: ${apiDomain} (stored: ${tokens.apiDomain})`);
+
   const client = new PipedriveClient({
     accessToken: tokens.accessToken,
-    apiDomain: tokens.apiDomain,
+    apiDomain,
   });
 
   // Load field mapping (cached with 1h TTL)
   await fieldMapper.load({
     accessToken: tokens.accessToken,
-    apiDomain: tokens.apiDomain,
+    apiDomain,
   });
 
   try {
@@ -110,4 +115,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 function parseCookie(cookieHeader: string, name: string): string | undefined {
   const match = cookieHeader.split(";").find((c) => c.trim().startsWith(`${name}=`));
   return match?.split("=")[1]?.trim();
+}
+
+function normalizeApiDomain(domain: string): string {
+  // Pipedrive OAuth may return domains like:
+  //   https://companydomain.pipedrive.com (correct)
+  //   https://companydomain-api.pipedrive.com (needs fixing)
+  //   https://api.pipedrive.com (generic, unusable)
+  // We also handle the company_domain override from callback
+  try {
+    const url = new URL(domain);
+    const host = url.hostname;
+
+    // Already a company subdomain (not api.pipedrive.com)
+    if (host.endsWith(".pipedrive.com") && !host.startsWith("api.")) {
+      // Strip "-api" suffix if present: "company-api.pipedrive.com" -> "company.pipedrive.com"
+      const subdomain = host.replace(".pipedrive.com", "").replace(/-api$/, "");
+      return `https://${subdomain}.pipedrive.com`;
+    }
+
+    // Generic api.pipedrive.com — can't determine company, return as-is
+    return domain;
+  } catch {
+    return domain;
+  }
 }
