@@ -34,13 +34,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const tokenStore = new TokenStore(encryptionKey);
     await tokenStore.store(userId, tokens);
 
+    // Set session cookie so MCP clients (like Claude Cowork) can authenticate
+    // without custom headers. The cookie contains the Pipedrive user ID.
+    res.setHeader("Set-Cookie", `pipedrive_uid=${userId}; Path=/; HttpOnly; Secure; SameSite=None; Max-Age=31536000`);
+
     res.status(200).send(`
       <html>
         <body style="font-family: sans-serif; padding: 40px; text-align: center;">
           <h1>Connected to Pipedrive</h1>
           <p>Your Pipedrive user ID is: <strong>${userId}</strong></p>
-          <p>Add this to your Claude Code MCP config headers to authenticate.</p>
-          <p>You can close this page.</p>
+          <p>You're all set. You can close this page.</p>
+          <p style="color: #666; font-size: 14px;">For Claude Code CLI, add header: Authorization: Bearer ${userId}</p>
         </body>
       </html>
     `);

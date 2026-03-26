@@ -14,14 +14,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return;
   }
 
-  // Resolve user identity from Authorization header
-  // Expected format: Bearer <pipedrive-user-id>
+  // Resolve user identity from Authorization header or cookie
+  // Header format: Bearer <pipedrive-user-id>
+  // Cookie format: pipedrive_uid=<pipedrive-user-id>
   const authHeader = req.headers.authorization;
-  const userId = authHeader?.replace("Bearer ", "");
+  const cookieUserId = parseCookie(req.headers.cookie ?? "", "pipedrive_uid");
+  const userId = authHeader?.replace("Bearer ", "") || cookieUserId;
 
   if (!userId) {
     res.status(401).json({
-      error: "Missing authorization. Add Bearer <pipedrive-user-id> header. Authorize at /api/auth/authorize first.",
+      error: "Not authenticated. Visit /api/auth/authorize to connect your Pipedrive account.",
     });
     return;
   }
@@ -76,4 +78,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   await server.connect(transport);
   await transport.handleRequest(req, res, req.body);
+}
+
+function parseCookie(cookieHeader: string, name: string): string | undefined {
+  const match = cookieHeader.split(";").find((c) => c.trim().startsWith(`${name}=`));
+  return match?.split("=")[1]?.trim();
 }
