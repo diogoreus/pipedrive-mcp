@@ -82,54 +82,45 @@ export function registerActivityTools(
   server: McpServer,
   getClient: () => PipedriveClient
 ): void {
-  server.tool("list-activities", {
-    description: "List activities with filters (deal, user, type, done/undone, date range).",
-    inputSchema: z.object({
-      deal_id: z.number().optional().describe("Filter by deal ID"),
-      owner_id: z.number().optional().describe("Filter by owner user ID"),
-      type: z.string().optional().describe("Filter by activity type (call, meeting, task, etc.)"),
-      done: z.boolean().optional().describe("Filter by completion status"),
-      due_date_from: z.string().optional().describe("Filter from date (YYYY-MM-DD)"),
-      due_date_to: z.string().optional().describe("Filter to date (YYYY-MM-DD)"),
-      limit: z.number().min(1).max(200).optional().describe("Results per page (default 50, max 200)"),
-      cursor: z.string().optional().describe("Pagination cursor"),
-    }),
+  server.tool("list-activities", "List activities with filters (deal, user, type, done/undone, date range).", {
+    deal_id: z.number().optional().describe("Filter by deal ID"),
+    owner_id: z.number().optional().describe("Filter by owner user ID"),
+    type: z.string().optional().describe("Filter by activity type (call, meeting, task, etc.)"),
+    done: z.boolean().optional().describe("Filter by completion status"),
+    due_date_from: z.string().optional().describe("Filter from date (YYYY-MM-DD)"),
+    due_date_to: z.string().optional().describe("Filter to date (YYYY-MM-DD)"),
+    limit: z.number().min(1).max(200).optional().describe("Results per page (default 50, max 200)"),
+    cursor: z.string().optional().describe("Pagination cursor"),
   }, withErrorHandling(async (inputs) => handleListActivities(inputs, getClient())));
 
-  server.tool("create-activity", {
-    description: "Schedule a new activity (call, meeting, task, etc.) on a deal.",
-    inputSchema: z.object({
-      subject: z.string().describe("Activity subject/title"),
-      type: z.string().describe("Activity type (call, meeting, task, deadline, email, lunch)"),
-      due_date: z.string().describe("Due date (YYYY-MM-DD)"),
-      due_time: z.string().optional().describe("Due time (HH:MM)"),
-      duration: z.string().optional().describe("Duration (HH:MM)"),
-      deal_id: z.number().optional().describe("Associated deal ID"),
-      person_id: z.number().optional().describe("Associated person ID"),
-      org_id: z.number().optional().describe("Associated organization ID"),
-      owner_id: z.number().optional().describe("Assigned owner user ID"),
-      done: z.boolean().optional().describe("Whether already completed"),
-      busy: z.boolean().optional().describe("Whether marked as busy"),
-      note: z.string().optional().describe("Activity note/description"),
-      location: z.string().optional().describe("Location"),
-    }),
+  server.tool("create-activity", "Schedule a new activity (call, meeting, task, etc.) on a deal.", {
+    subject: z.string().describe("Activity subject/title"),
+    type: z.string().describe("Activity type (call, meeting, task, deadline, email, lunch)"),
+    due_date: z.string().describe("Due date (YYYY-MM-DD)"),
+    due_time: z.string().optional().describe("Due time (HH:MM)"),
+    duration: z.string().optional().describe("Duration (HH:MM)"),
+    deal_id: z.number().optional().describe("Associated deal ID"),
+    person_id: z.number().optional().describe("Associated person ID"),
+    org_id: z.number().optional().describe("Associated organization ID"),
+    owner_id: z.number().optional().describe("Assigned owner user ID"),
+    done: z.boolean().optional().describe("Whether already completed"),
+    busy: z.boolean().optional().describe("Whether marked as busy"),
+    note: z.string().optional().describe("Activity note/description"),
+    location: z.string().optional().describe("Location"),
   }, withErrorHandling(async (inputs) => handleCreateActivity(inputs, getClient())));
 
-  server.tool("update-activity", {
-    description: "Update an existing activity or mark it as done.",
-    inputSchema: z.object({
-      id: z.number().describe("Activity ID to update"),
-      subject: z.string().optional().describe("Activity subject"),
-      type: z.string().optional().describe("Activity type"),
-      due_date: z.string().optional().describe("Due date (YYYY-MM-DD)"),
-      due_time: z.string().optional().describe("Due time (HH:MM)"),
-      duration: z.string().optional().describe("Duration (HH:MM)"),
-      deal_id: z.number().optional().describe("Associated deal ID"),
-      person_id: z.number().optional().describe("Associated person ID"),
-      org_id: z.number().optional().describe("Associated organization ID"),
-      done: z.boolean().optional().describe("Mark as done/undone"),
-      note: z.string().optional().describe("Activity note"),
-      location: z.string().optional().describe("Location"),
-    }),
+  server.tool("update-activity", "Update an existing activity or mark it as done.", {
+    id: z.number().describe("Activity ID to update"),
+    subject: z.string().optional().describe("Activity subject"),
+    type: z.string().optional().describe("Activity type"),
+    due_date: z.string().optional().describe("Due date (YYYY-MM-DD)"),
+    due_time: z.string().optional().describe("Due time (HH:MM)"),
+    duration: z.string().optional().describe("Duration (HH:MM)"),
+    deal_id: z.number().optional().describe("Associated deal ID"),
+    person_id: z.number().optional().describe("Associated person ID"),
+    org_id: z.number().optional().describe("Associated organization ID"),
+    done: z.boolean().optional().describe("Mark as done/undone"),
+    note: z.string().optional().describe("Activity note"),
+    location: z.string().optional().describe("Location"),
   }, withErrorHandling(async (inputs) => handleUpdateActivity(inputs, getClient())));
 }

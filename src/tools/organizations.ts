@@ -70,40 +70,28 @@ export function registerOrganizationTools(
   getClient: () => PipedriveClient,
   getFieldMapper: () => FieldMapper
 ): void {
-  server.tool("list-organizations", {
-    description: "List organizations with filters (owner). Custom field names resolved.",
-    inputSchema: z.object({
-      owner_id: z.number().optional().describe("Filter by owner user ID"),
-      limit: z.number().min(1).max(200).optional().describe("Results per page (default 50, max 200)"),
-      cursor: z.string().optional().describe("Pagination cursor"),
-    }),
+  server.tool("list-organizations", "List organizations with filters (owner). Custom field names resolved.", {
+    owner_id: z.number().optional().describe("Filter by owner user ID"),
+    limit: z.number().min(1).max(200).optional().describe("Results per page (default 50, max 200)"),
+    cursor: z.string().optional().describe("Pagination cursor"),
   }, withErrorHandling(async (inputs) => handleListOrganizations(inputs, getClient(), getFieldMapper())));
 
-  server.tool("get-organization", {
-    description: "Get full organization detail with associated persons and deals.",
-    inputSchema: z.object({
-      id: z.number().describe("Organization ID"),
-    }),
+  server.tool("get-organization", "Get full organization detail with associated persons and deals.", {
+    id: z.number().describe("Organization ID"),
   }, withErrorHandling(async (inputs) => handleGetOrganization(inputs, getClient(), getFieldMapper())));
 
-  server.tool("create-organization", {
-    description: "Create a new organization.",
-    inputSchema: z.object({
-      name: z.string().describe("Organization name (required)"),
-      owner_id: z.number().optional().describe("Owner user ID"),
-      address: z.string().optional().describe("Address"),
-      custom_fields: z.record(z.unknown()).optional().describe("Custom fields (human-readable names)"),
-    }),
+  server.tool("create-organization", "Create a new organization.", {
+    name: z.string().describe("Organization name (required)"),
+    owner_id: z.number().optional().describe("Owner user ID"),
+    address: z.string().optional().describe("Address"),
+    custom_fields: z.record(z.unknown()).optional().describe("Custom fields (human-readable names)"),
   }, withErrorHandling(async (inputs) => handleCreateOrganization(inputs, getClient(), getFieldMapper())));
 
-  server.tool("update-organization", {
-    description: "Update an organization's fields.",
-    inputSchema: z.object({
-      id: z.number().describe("Organization ID to update"),
-      name: z.string().optional().describe("Organization name"),
-      owner_id: z.number().optional().describe("Owner user ID"),
-      address: z.string().optional().describe("Address"),
-      custom_fields: z.record(z.unknown()).optional().describe("Custom fields (human-readable names)"),
-    }),
+  server.tool("update-organization", "Update an organization's fields.", {
+    id: z.number().describe("Organization ID to update"),
+    name: z.string().optional().describe("Organization name"),
+    owner_id: z.number().optional().describe("Owner user ID"),
+    address: z.string().optional().describe("Address"),
+    custom_fields: z.record(z.unknown()).optional().describe("Custom fields (human-readable names)"),
   }, withErrorHandling(async (inputs) => handleUpdateOrganization(inputs, getClient(), getFieldMapper())));
 }

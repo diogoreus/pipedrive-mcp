@@ -133,57 +133,45 @@ export function registerDealTools(
   getClient: () => PipedriveClient,
   getFieldMapper: () => FieldMapper
 ): void {
-  server.tool("list-deals", {
-    description: "List deals with filters (owner, stage, pipeline, status). Returns deal data with custom field names resolved. Use get-deal for full enrichment.",
-    inputSchema: z.object({
-      owner_id: z.number().optional().describe("Filter by deal owner user ID"),
-      pipeline_id: z.number().optional().describe("Filter by pipeline ID"),
-      stage_id: z.number().optional().describe("Filter by stage ID"),
-      status: z.enum(["open", "won", "lost"]).optional().describe("Filter by deal status"),
-      limit: z.number().min(1).max(200).optional().describe("Results per page (default 50, max 200)"),
-      cursor: z.string().optional().describe("Pagination cursor from previous response"),
-    }),
+  server.tool("list-deals", "List deals with filters (owner, stage, pipeline, status). Returns deal data with custom field names resolved. Use get-deal for full enrichment.", {
+    owner_id: z.number().optional().describe("Filter by deal owner user ID"),
+    pipeline_id: z.number().optional().describe("Filter by pipeline ID"),
+    stage_id: z.number().optional().describe("Filter by stage ID"),
+    status: z.enum(["open", "won", "lost"]).optional().describe("Filter by deal status"),
+    limit: z.number().min(1).max(200).optional().describe("Results per page (default 50, max 200)"),
+    cursor: z.string().optional().describe("Pagination cursor from previous response"),
   }, withErrorHandling(async (inputs) => handleListDeals(inputs, getClient(), getFieldMapper())));
 
-  server.tool("get-deal", {
-    description: "Get a single deal with full enrichment: activities, person, organization, stage info, custom fields, and notes.",
-    inputSchema: z.object({
-      id: z.number().describe("The deal ID"),
-    }),
+  server.tool("get-deal", "Get a single deal with full enrichment: activities, person, organization, stage info, custom fields, and notes.", {
+    id: z.number().describe("The deal ID"),
   }, withErrorHandling(async (inputs) => handleGetDeal(inputs, getClient(), getFieldMapper())));
 
-  server.tool("create-deal", {
-    description: "Create a new deal with optional associations.",
-    inputSchema: z.object({
-      title: z.string().describe("Deal title (required)"),
-      value: z.number().optional().describe("Deal monetary value"),
-      currency: z.string().optional().describe("Currency code (e.g., USD)"),
-      person_id: z.number().optional().describe("Associated person ID"),
-      org_id: z.number().optional().describe("Associated organization ID"),
-      pipeline_id: z.number().optional().describe("Pipeline ID"),
-      stage_id: z.number().optional().describe("Stage ID"),
-      status: z.enum(["open", "won", "lost"]).optional().describe("Deal status"),
-      expected_close_date: z.string().optional().describe("Expected close date (YYYY-MM-DD)"),
-      owner_id: z.number().optional().describe("Owner user ID"),
-      custom_fields: z.record(z.unknown()).optional().describe("Custom fields (use human-readable names)"),
-    }),
+  server.tool("create-deal", "Create a new deal with optional associations.", {
+    title: z.string().describe("Deal title (required)"),
+    value: z.number().optional().describe("Deal monetary value"),
+    currency: z.string().optional().describe("Currency code (e.g., USD)"),
+    person_id: z.number().optional().describe("Associated person ID"),
+    org_id: z.number().optional().describe("Associated organization ID"),
+    pipeline_id: z.number().optional().describe("Pipeline ID"),
+    stage_id: z.number().optional().describe("Stage ID"),
+    status: z.enum(["open", "won", "lost"]).optional().describe("Deal status"),
+    expected_close_date: z.string().optional().describe("Expected close date (YYYY-MM-DD)"),
+    owner_id: z.number().optional().describe("Owner user ID"),
+    custom_fields: z.record(z.unknown()).optional().describe("Custom fields (use human-readable names)"),
   }, withErrorHandling(async (inputs) => handleCreateDeal(inputs, getClient(), getFieldMapper())));
 
-  server.tool("update-deal", {
-    description: "Update an existing deal's fields.",
-    inputSchema: z.object({
-      id: z.number().describe("The deal ID to update"),
-      title: z.string().optional().describe("Deal title"),
-      value: z.number().optional().describe("Deal monetary value"),
-      currency: z.string().optional().describe("Currency code"),
-      person_id: z.number().optional().describe("Associated person ID"),
-      org_id: z.number().optional().describe("Associated organization ID"),
-      pipeline_id: z.number().optional().describe("Pipeline ID"),
-      stage_id: z.number().optional().describe("Stage ID"),
-      status: z.enum(["open", "won", "lost"]).optional().describe("Deal status"),
-      expected_close_date: z.string().optional().describe("Expected close date (YYYY-MM-DD)"),
-      owner_id: z.number().optional().describe("Owner user ID"),
-      custom_fields: z.record(z.unknown()).optional().describe("Custom fields (use human-readable names)"),
-    }),
+  server.tool("update-deal", "Update an existing deal's fields.", {
+    id: z.number().describe("The deal ID to update"),
+    title: z.string().optional().describe("Deal title"),
+    value: z.number().optional().describe("Deal monetary value"),
+    currency: z.string().optional().describe("Currency code"),
+    person_id: z.number().optional().describe("Associated person ID"),
+    org_id: z.number().optional().describe("Associated organization ID"),
+    pipeline_id: z.number().optional().describe("Pipeline ID"),
+    stage_id: z.number().optional().describe("Stage ID"),
+    status: z.enum(["open", "won", "lost"]).optional().describe("Deal status"),
+    expected_close_date: z.string().optional().describe("Expected close date (YYYY-MM-DD)"),
+    owner_id: z.number().optional().describe("Owner user ID"),
+    custom_fields: z.record(z.unknown()).optional().describe("Custom fields (use human-readable names)"),
   }, withErrorHandling(async (inputs) => handleUpdateDeal(inputs, getClient(), getFieldMapper())));
 }

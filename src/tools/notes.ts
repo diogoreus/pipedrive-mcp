@@ -55,38 +55,29 @@ export function registerNoteTools(
   server: McpServer,
   getClient: () => PipedriveClient
 ): void {
-  server.tool("list-notes", {
-    description: "List notes for a deal, person, or organization.",
-    inputSchema: z.object({
-      deal_id: z.number().optional().describe("Filter by deal ID"),
-      person_id: z.number().optional().describe("Filter by person ID"),
-      org_id: z.number().optional().describe("Filter by organization ID"),
-      limit: z.number().min(1).max(200).optional().describe("Results per page (default 50, max 200)"),
-      cursor: z.string().optional().describe("Pagination cursor"),
-    }),
+  server.tool("list-notes", "List notes for a deal, person, or organization.", {
+    deal_id: z.number().optional().describe("Filter by deal ID"),
+    person_id: z.number().optional().describe("Filter by person ID"),
+    org_id: z.number().optional().describe("Filter by organization ID"),
+    limit: z.number().min(1).max(200).optional().describe("Results per page (default 50, max 200)"),
+    cursor: z.string().optional().describe("Pagination cursor"),
   }, withErrorHandling(async (inputs) => handleListNotes(inputs, getClient())));
 
-  server.tool("create-note", {
-    description: "Add a note to a deal, person, or organization.",
-    inputSchema: z.object({
-      content: z.string().describe("Note content (HTML supported)"),
-      deal_id: z.number().optional().describe("Associated deal ID"),
-      person_id: z.number().optional().describe("Associated person ID"),
-      org_id: z.number().optional().describe("Associated organization ID"),
-      pinned_to_deal_flag: z.boolean().optional().describe("Pin to deal"),
-      pinned_to_person_flag: z.boolean().optional().describe("Pin to person"),
-      pinned_to_organization_flag: z.boolean().optional().describe("Pin to organization"),
-    }),
+  server.tool("create-note", "Add a note to a deal, person, or organization.", {
+    content: z.string().describe("Note content (HTML supported)"),
+    deal_id: z.number().optional().describe("Associated deal ID"),
+    person_id: z.number().optional().describe("Associated person ID"),
+    org_id: z.number().optional().describe("Associated organization ID"),
+    pinned_to_deal_flag: z.boolean().optional().describe("Pin to deal"),
+    pinned_to_person_flag: z.boolean().optional().describe("Pin to person"),
+    pinned_to_organization_flag: z.boolean().optional().describe("Pin to organization"),
   }, withErrorHandling(async (inputs) => handleCreateNote(inputs, getClient())));
 
-  server.tool("update-note", {
-    description: "Edit an existing note.",
-    inputSchema: z.object({
-      id: z.number().describe("Note ID to update"),
-      content: z.string().optional().describe("Updated content (HTML supported)"),
-      pinned_to_deal_flag: z.boolean().optional().describe("Pin to deal"),
-      pinned_to_person_flag: z.boolean().optional().describe("Pin to person"),
-      pinned_to_organization_flag: z.boolean().optional().describe("Pin to organization"),
-    }),
+  server.tool("update-note", "Edit an existing note.", {
+    id: z.number().describe("Note ID to update"),
+    content: z.string().optional().describe("Updated content (HTML supported)"),
+    pinned_to_deal_flag: z.boolean().optional().describe("Pin to deal"),
+    pinned_to_person_flag: z.boolean().optional().describe("Pin to person"),
+    pinned_to_organization_flag: z.boolean().optional().describe("Pin to organization"),
   }, withErrorHandling(async (inputs) => handleUpdateNote(inputs, getClient())));
 }

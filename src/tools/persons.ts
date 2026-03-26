@@ -89,61 +89,49 @@ export function registerPersonTools(
   getClient: () => PipedriveClient,
   getFieldMapper: () => FieldMapper
 ): void {
-  server.tool("list-persons", {
-    description: "List contacts with filters (owner, org). Custom field names resolved.",
-    inputSchema: z.object({
-      owner_id: z.number().optional().describe("Filter by owner user ID"),
-      org_id: z.number().optional().describe("Filter by organization ID"),
-      limit: z.number().min(1).max(200).optional().describe("Results per page (default 50, max 200)"),
-      cursor: z.string().optional().describe("Pagination cursor"),
-    }),
+  server.tool("list-persons", "List contacts with filters (owner, org). Custom field names resolved.", {
+    owner_id: z.number().optional().describe("Filter by owner user ID"),
+    org_id: z.number().optional().describe("Filter by organization ID"),
+    limit: z.number().min(1).max(200).optional().describe("Results per page (default 50, max 200)"),
+    cursor: z.string().optional().describe("Pagination cursor"),
   }, withErrorHandling(async (inputs) => handleListPersons(inputs, getClient(), getFieldMapper())));
 
-  server.tool("get-person", {
-    description: "Get full person detail with associated deals, activities, and organization.",
-    inputSchema: z.object({
-      id: z.number().describe("Person ID"),
-    }),
+  server.tool("get-person", "Get full person detail with associated deals, activities, and organization.", {
+    id: z.number().describe("Person ID"),
   }, withErrorHandling(async (inputs) => handleGetPerson(inputs, getClient(), getFieldMapper())));
 
-  server.tool("create-person", {
-    description: "Create a new contact.",
-    inputSchema: z.object({
-      name: z.string().describe("Person name (required)"),
-      owner_id: z.number().optional().describe("Owner user ID"),
-      org_id: z.number().optional().describe("Organization ID"),
-      emails: z.array(z.object({
-        value: z.string(),
-        primary: z.boolean().optional(),
-        label: z.string().optional(),
-      })).optional().describe("Email addresses"),
-      phones: z.array(z.object({
-        value: z.string(),
-        primary: z.boolean().optional(),
-        label: z.string().optional(),
-      })).optional().describe("Phone numbers"),
-      custom_fields: z.record(z.unknown()).optional().describe("Custom fields (human-readable names)"),
-    }),
+  server.tool("create-person", "Create a new contact.", {
+    name: z.string().describe("Person name (required)"),
+    owner_id: z.number().optional().describe("Owner user ID"),
+    org_id: z.number().optional().describe("Organization ID"),
+    emails: z.array(z.object({
+      value: z.string(),
+      primary: z.boolean().optional(),
+      label: z.string().optional(),
+    })).optional().describe("Email addresses"),
+    phones: z.array(z.object({
+      value: z.string(),
+      primary: z.boolean().optional(),
+      label: z.string().optional(),
+    })).optional().describe("Phone numbers"),
+    custom_fields: z.record(z.unknown()).optional().describe("Custom fields (human-readable names)"),
   }, withErrorHandling(async (inputs) => handleCreatePerson(inputs, getClient(), getFieldMapper())));
 
-  server.tool("update-person", {
-    description: "Update a contact's fields.",
-    inputSchema: z.object({
-      id: z.number().describe("Person ID to update"),
-      name: z.string().optional().describe("Person name"),
-      owner_id: z.number().optional().describe("Owner user ID"),
-      org_id: z.number().optional().describe("Organization ID"),
-      emails: z.array(z.object({
-        value: z.string(),
-        primary: z.boolean().optional(),
-        label: z.string().optional(),
-      })).optional().describe("Email addresses"),
-      phones: z.array(z.object({
-        value: z.string(),
-        primary: z.boolean().optional(),
-        label: z.string().optional(),
-      })).optional().describe("Phone numbers"),
-      custom_fields: z.record(z.unknown()).optional().describe("Custom fields (human-readable names)"),
-    }),
+  server.tool("update-person", "Update a contact's fields.", {
+    id: z.number().describe("Person ID to update"),
+    name: z.string().optional().describe("Person name"),
+    owner_id: z.number().optional().describe("Owner user ID"),
+    org_id: z.number().optional().describe("Organization ID"),
+    emails: z.array(z.object({
+      value: z.string(),
+      primary: z.boolean().optional(),
+      label: z.string().optional(),
+    })).optional().describe("Email addresses"),
+    phones: z.array(z.object({
+      value: z.string(),
+      primary: z.boolean().optional(),
+      label: z.string().optional(),
+    })).optional().describe("Phone numbers"),
+    custom_fields: z.record(z.unknown()).optional().describe("Custom fields (human-readable names)"),
   }, withErrorHandling(async (inputs) => handleUpdatePerson(inputs, getClient(), getFieldMapper())));
 }

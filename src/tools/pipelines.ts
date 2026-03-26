@@ -92,16 +92,10 @@ export function registerPipelineTools(
   server: McpServer,
   getClient: () => PipedriveClient
 ): void {
-  server.tool("list-pipelines", {
-    description: "List all pipelines with their stages inline.",
-    inputSchema: z.object({}),
-  }, withErrorHandling(async () => handleListPipelines(getClient())));
+  server.tool("list-pipelines", "List all pipelines with their stages inline.", {}, withErrorHandling(async () => handleListPipelines(getClient())));
 
-  server.tool("get-pipeline-deals", {
-    description: "Get all deals in a pipeline grouped by stage. Returns summary data per deal (title, value, next activity date). Capped at 200 deals.",
-    inputSchema: z.object({
-      pipeline_id: z.number().describe("Pipeline ID"),
-      stage_id: z.number().optional().describe("Optional: filter to a specific stage"),
-    }),
+  server.tool("get-pipeline-deals", "Get all deals in a pipeline grouped by stage. Returns summary data per deal (title, value, next activity date). Capped at 200 deals.", {
+    pipeline_id: z.number().describe("Pipeline ID"),
+    stage_id: z.number().optional().describe("Optional: filter to a specific stage"),
   }, withErrorHandling(async (inputs) => handleGetPipelineDeals(inputs, getClient())));
 }
