@@ -82,17 +82,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     apiDomain: tokens.apiDomain,
   });
 
-  const server = createServer({
-    getClient: () => client,
-    getFieldMapper: () => fieldMapper,
-  });
+  try {
+    const server = createServer({
+      getClient: () => client,
+      getFieldMapper: () => fieldMapper,
+    });
 
-  const transport = new StreamableHTTPServerTransport({
-    sessionIdGenerator: undefined, // Stateless mode
-  });
+    const transport = new StreamableHTTPServerTransport({
+      sessionIdGenerator: undefined, // Stateless mode
+    });
 
-  await server.connect(transport);
-  await transport.handleRequest(req, res, req.body);
+    await server.connect(transport);
+    await transport.handleRequest(req, res, req.body);
+  } catch (err) {
+    console.error("MCP handler error:", err);
+    if (!res.headersSent) {
+      res.status(500).json({
+        error: "Internal server error",
+        details: err instanceof Error ? err.message : String(err),
+      });
+    }
+  }
 }
 
 function parseCookie(cookieHeader: string, name: string): string | undefined {
