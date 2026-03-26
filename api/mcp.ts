@@ -32,9 +32,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Resolve user identity from Authorization header or cookie
   // Header format: Bearer <pipedrive-user-id>
   // Cookie format: pipedrive_uid=<pipedrive-user-id>
+  // Resolve user identity: header > cookie > env default (for single-user/testing)
   const authHeader = req.headers.authorization;
   const cookieUserId = parseCookie(req.headers.cookie ?? "", "pipedrive_uid");
-  const userId = authHeader?.replace("Bearer ", "") || cookieUserId;
+  const defaultUserId = process.env.DEFAULT_PIPEDRIVE_USER_ID;
+  const userId = authHeader?.replace("Bearer ", "") || cookieUserId || defaultUserId;
 
   if (!userId) {
     res.status(401).json({
