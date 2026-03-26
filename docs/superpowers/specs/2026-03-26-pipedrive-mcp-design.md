@@ -197,7 +197,7 @@ Users add to their Claude Code MCP config:
 }
 ```
 
-First connection triggers OAuth. After that, it just works.
+User must authorize once via browser (visit `/api/auth/authorize`) before connecting from Claude Code. After that, it just works.
 
 ### Not in Scope (Yet)
 
