@@ -1,6 +1,12 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { NodeStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { createServer } from "../src/server.js";
+import { PipedriveClient } from "../src/pipedrive/client.js";
+import { FieldMapper } from "../src/pipedrive/fields.js";
+import { TokenStore } from "../src/auth/token-store.js";
+import { refreshAccessToken } from "../src/auth/oauth.js";
+
+const fieldMapper = new FieldMapper();
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "GET" && req.method !== "POST" && req.method !== "DELETE") {
@@ -8,10 +14,64 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return;
   }
 
-  const server = createServer();
+  // Resolve user identity from Authorization header
+  // Expected format: Bearer <pipedrive-user-id>
+  const authHeader = req.headers.authorization;
+  const userId = authHeader?.replace("Bearer ", "");
+
+  if (!userId) {
+    res.status(401).json({
+      error: "Missing authorization. Add Bearer <pipedrive-user-id> header. Authorize at /api/auth/authorize first.",
+    });
+    return;
+  }
+
+  const encryptionKey = process.env.ENCRYPTION_KEY!;
+  const tokenStore = new TokenStore(encryptionKey);
+
+  let tokens = await tokenStore.retrieve(userId);
+  if (!tokens) {
+    res.status(401).json({
+      error: `No tokens found for user ${userId}. Please authorize at /api/auth/authorize`,
+    });
+    return;
+  }
+
+  // Refresh token if expired (with 5-minute buffer)
+  if (tokens.expiresAt < Date.now() + 5 * 60 * 1000) {
+    try {
+      tokens = await refreshAccessToken({
+        refreshToken: tokens.refreshToken,
+        clientId: process.env.PIPEDRIVE_CLIENT_ID!,
+        clientSecret: process.env.PIPEDRIVE_CLIENT_SECRET!,
+      });
+      await tokenStore.store(userId, tokens);
+    } catch {
+      res.status(401).json({
+        error: "Token refresh failed. Please re-authorize at /api/auth/authorize",
+      });
+      return;
+    }
+  }
+
+  const client = new PipedriveClient({
+    accessToken: tokens.accessToken,
+    apiDomain: tokens.apiDomain,
+  });
+
+  // Load field mapping (cached with 1h TTL)
+  await fieldMapper.load({
+    accessToken: tokens.accessToken,
+    apiDomain: tokens.apiDomain,
+  });
+
+  const server = createServer({
+    getClient: () => client,
+    getFieldMapper: () => fieldMapper,
+  });
 
   const transport = new NodeStreamableHTTPServerTransport({
-    sessionIdGenerator: undefined,
+    sessionIdGenerator: undefined, // Stateless mode
   });
 
   await server.connect(transport);
