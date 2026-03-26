@@ -25,8 +25,7 @@ describe("PipedriveClient", () => {
 
       expect(result).toEqual({ id: 1, title: "Deal" });
       const [url, options] = fetch.mock.calls[0];
-      expect(url).toBe("https://company.pipedrive.com/api/v2/deals/1");
-      expect(options.headers["Authorization"]).toBe("Bearer test-token");
+      expect(url).toBe("https://company.pipedrive.com/api/v2/deals/1?api_token=test-token");
     });
 
     it("appends query parameters", async () => {

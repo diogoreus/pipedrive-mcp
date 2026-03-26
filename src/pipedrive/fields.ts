@@ -14,10 +14,8 @@ export class FieldMapper {
     }
 
     // Try v1 endpoint — v2 may require additional scopes
-    const url = `${config.apiDomain}/api/v1/dealFields?limit=500`;
-    const res = await fetch(url, {
-      headers: { Authorization: `Bearer ${config.accessToken}` },
-    });
+    const url = `${config.apiDomain}/api/v1/dealFields?api_token=${config.accessToken}&limit=500`;
+    const res = await fetch(url);
 
     if (!res.ok) {
       console.warn(`Failed to load deal fields: ${res.status}. Custom field translation disabled.`);

@@ -63,6 +63,8 @@ export class PipedriveClient {
 
   private buildUrl(path: string, params?: Record<string, string>): string {
     const url = new URL(path, this.apiDomain);
+    // Pipedrive API tokens are passed as query param for v1 endpoints
+    url.searchParams.set("api_token", this.accessToken);
     if (params) {
       for (const [key, value] of Object.entries(params)) {
         if (value !== undefined) url.searchParams.set(key, value);
