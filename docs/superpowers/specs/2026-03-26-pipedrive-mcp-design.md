@@ -26,7 +26,7 @@ A custom MCP server for Artemis that provides read/write access to Pipedrive dat
 
 ### Key Layers
 
-1. **MCP Transport** — Streamable HTTP endpoint handling MCP protocol (session management, tool listing, tool execution).
+1. **MCP Transport** — Streamable HTTP endpoint handling MCP protocol (tool listing, tool execution). Each request is treated as stateless — user identity is resolved from the request headers, and OAuth tokens are loaded from Vercel KV per-request. No in-memory session state is maintained across serverless invocations.
 2. **Auth** — OAuth 2.0 with Pipedrive. Each user authorizes once; tokens stored and refreshed server-side in Vercel KV. The MCP connection carries the user's identity.
 3. **Tool Handlers** — MCP tools organized by resource. Enriched resource tools (Approach B) graduating to domain-oriented tools (Approach C) where it reduces round-trips.
 4. **Pipedrive Client** — Typed TypeScript wrapper around the Pipedrive REST API. Handles pagination, rate limiting, error mapping. All tool handlers go through this layer.
@@ -44,18 +44,30 @@ Pipedrive OAuth requires registering an app in the Pipedrive Developer Hub (clie
 
 ### Flow
 
-1. User adds the MCP server to their Claude Code config with the Vercel URL.
-2. On first connection, the MCP server redirects to Pipedrive's OAuth consent screen.
-3. User authorizes, Pipedrive redirects back with an auth code.
-4. Server exchanges code for access + refresh tokens.
-5. Tokens are stored server-side in Vercel KV (encrypted, keyed by Pipedrive user ID).
-6. On subsequent connections, the server uses stored tokens (refreshing as needed).
+MCP connections are JSON-RPC over HTTP — there is no browser in the MCP channel. OAuth requires a browser-based consent step that happens outside the MCP connection:
+
+1. **One-time setup (browser):** User visits `https://pipedrive-mcp.vercel.app/api/auth/authorize` in their browser. This redirects to Pipedrive's OAuth consent screen.
+2. User authorizes the app. Pipedrive redirects to `/api/auth/callback` with an auth code.
+3. Server exchanges the code for access + refresh tokens, stores them in Vercel KV (encrypted, keyed by Pipedrive user ID).
+4. Callback page shows success and the user's Pipedrive user ID (used as their auth identifier).
+5. **MCP connection:** User adds the server to their Claude Code config. Each MCP request includes the user's Pipedrive user ID (via a header or session token). The server looks up their stored OAuth tokens from KV.
+6. On subsequent MCP requests, the server uses stored tokens, refreshing transparently as needed. If tokens are expired and cannot be refreshed, the tool returns an error directing the user to re-authorize via the browser URL.
 
 ### Token Storage
 
-Vercel KV (Redis) — simple key-value, built into Vercel. Tokens encrypted at rest using a server-side encryption key.
+Vercel KV (Redis) — simple key-value, built into Vercel. Tokens encrypted at rest using a server-side encryption key. If the encryption key is lost/rotated, all stored tokens are invalidated and users must re-authorize — acceptable for a small team.
 
-## MCP Tools — Initial Set (18 tools)
+## MCP Tools — Initial Set (20 tools)
+
+### Design Decisions
+
+- **No delete operations.** Intentionally excluded from the initial build. Deleting deals, contacts, or activities is high-risk and rarely needed in the sales workflow. If needed, it can be done in the Pipedrive UI. Can be added later with confirmation safeguards.
+- **Custom fields:** Pipedrive custom fields use hash-key names (e.g., `abc123_field_name`). The Pipedrive client will maintain a cached field mapping (fetched on first use, refreshed periodically) and translate hash keys to human-readable labels in all tool responses. Write tools accept human-readable field names and resolve them to hash keys.
+- **Input schemas:** Every tool defines a JSON Schema for its inputs (required/optional fields, types) per the MCP protocol spec. This is defined in each tool's registration, not detailed in this design doc.
+
+### Search
+
+- **`search`** — Global search across deals, persons, and organizations using Pipedrive's `/v1/itemSearch` endpoint. Returns results grouped by type with basic enrichment (stage name for deals, org name for persons). Reduces the need for Claude Code to guess which `list-*` tool to call.
 
 ### Deals
 
@@ -87,7 +99,7 @@ Vercel KV (Redis) — simple key-value, built into Vercel. Tokens encrypted at r
 ### Pipelines & Stages
 
 - **`list-pipelines`** — List all pipelines with their stages inline (no separate call needed).
-- **`get-pipeline-deals`** — All deals in a pipeline, grouped by stage. Domain-oriented tool (Approach C) giving Claude Code a full pipeline view in one shot.
+- **`get-pipeline-deals`** — Deals in a pipeline, grouped by stage. Domain-oriented tool (Approach C) giving Claude Code a full pipeline view in one shot. Returns summary data per deal (title, value, person name, stage, next activity date) rather than full deal objects. Capped at 200 deals; accepts optional stage filter for larger pipelines.
 
 ### Notes
 
@@ -100,10 +112,10 @@ Vercel KV (Redis) — simple key-value, built into Vercel. Tokens encrypted at r
 ### Responsibilities
 
 - **Typed requests/responses** — TypeScript interfaces for each resource (Deal, Person, Activity, etc.).
-- **Pagination** — Auto-paginate or expose cursor control. Pipedrive uses cursor-based pagination with max 500 items per page.
-- **Rate limit handling** — Pipedrive assigns token costs per endpoint (1-20 tokens per request). Client tracks usage and backs off gracefully.
-- **Error mapping** — Translate Pipedrive HTTP errors into clean MCP error responses.
-- **API version routing** — Some resources work better on v1 vs v2. Client abstracts this from tool handlers.
+- **Pagination** — All `list-*` tools accept optional `limit` (default 50, max 200) and `cursor` parameters. The client fetches one page per tool call — no auto-pagination to avoid Vercel function timeouts. Claude Code can request more pages by passing the returned cursor.
+- **Rate limit handling** — For a 2-5 user team, Pipedrive rate limits are unlikely to be hit. Strategy is reactive: handle `429` responses with automatic retry + exponential backoff (up to 2 retries per request). No proactive token tracking needed at this scale.
+- **Error mapping** — Translate Pipedrive HTTP errors into structured MCP error responses with three categories: `not_found` (404), `rate_limited` (429, include retry-after), `auth_expired` (401, include re-authorize URL), `validation_error` (400, include field-level details), `server_error` (5xx). Errors are returned as MCP tool error results with a `code` and `message`.
+- **API version routing** — Some resources work better on v1 vs v2. Client abstracts this from tool handlers. Version mapping per resource will be determined during implementation based on Pipedrive API docs.
 
 ### Response Enrichment Pattern
 
@@ -130,6 +142,7 @@ No enrichment framework — just well-structured tool handlers. Shared patterns 
 │   │   ├── types.ts           # TypeScript interfaces for Pipedrive resources
 │   │   └── pagination.ts      # Pagination helpers
 │   ├── tools/
+│   │   ├── search.ts          # Global search tool
 │   │   ├── deals.ts           # Deal tools (list, get, create, update)
 │   │   ├── activities.ts      # Activity tools
 │   │   ├── persons.ts         # Person tools
@@ -157,6 +170,7 @@ Separation: `pipedrive/` knows about the API, `tools/` knows about MCP, `auth/` 
 - Single serverless function at `api/mcp.ts` for all MCP traffic (Streamable HTTP)
 - OAuth routes at `api/auth/authorize.ts` and `api/auth/callback.ts`
 - Vercel git integration: push to main = deploy
+- **Vercel Pro plan assumed** — 60-second function timeout, sufficient for enriched responses making 4-5 parallel Pipedrive API calls including cold starts
 
 ### Environment Variables
 
